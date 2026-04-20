@@ -28,7 +28,7 @@ async def on_member_join(member):
     background.paste(profile, (425, 100))
     
     # เพิ่มชื่อผู้ใช้ด้านล่างโปรไฟล์
-    font_large = Font.poppins(size=50, variant="bold")
+    font_large = Font.light(size=50)
     font_small = Font.poppins(size=30, variant="light")
     
     background.text((550, 380), f"WELCOME", color="white", font=font_large, align="center")
