@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from keep_alive import keep_alive
 from easy_pil import Editor, load_image_with_retry, Font
 
 # ตั้งค่าบอท
@@ -53,5 +54,6 @@ async def on_member_remove(member):
     
     file = discord.File(fp=background.image_bytes, filename="goodbye.png")
     await channel.send(f"ลาก่อนนะคุณ {member.name} แล้วเจอกันใหม่!", file=file)
-
+    
+keep_alive() # เรียกใช้งานฟังก์ชัน keep_alive
 bot.run(os.getenv('TOKEN'))
