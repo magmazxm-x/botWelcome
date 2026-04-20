@@ -2,79 +2,62 @@ import discord
 from discord.ext import commands
 import os
 from keep_alive import keep_alive
-from easy_pil import Editor, load_image_with_retry, Font
+# แก้บรรทัดนี้: เอา load_image_with_retry ออก แล้วใส่ load_image แทน
+from easy_pil import Editor, load_image, Font 
 
-# 1. ตั้งค่า Intents ให้มองเห็นสมาชิก
 intents = discord.Intents.default()
 intents.members = True 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f'--- บอทออนไลน์แล้วในชื่อ: {bot.user.name} ---')
+    print(f'✅ Online as: {bot.user.name}')
 
 @bot.event
 async def on_member_join(member):
-    # เลขห้องที่คุณส่งมา (Welcome)
-    channel_id = 1495616411647737916 
-    channel = bot.get_channel(channel_id)
-    if not channel:
-        return
-
+    channel = bot.get_channel(1495616411647737916)
+    if not channel: return
     try:
-        # โหลดพื้นหลัง (ขนาดควรสัมพันธ์กับ 1100x500 เพื่อความสวยงาม)
         background = Editor("background.png").resize((1100, 500))
         
-        # โหลดรูปโปรไฟล์และตัดวงกลม
-        profile_image = load_image_with_retry(member.display_avatar.url)
-        profile = Editor(profile_image).resize((250, 250)).circle_image()
+        # แก้บรรทัดนี้: ใช้ load_image แทน
+        profile_img = load_image(member.display_avatar.url) 
+        profile = Editor(profile_img).resize((250, 250)).circle_image()
         
-        # วางรูปโปรไฟล์ไว้ตรงกลาง
         background.paste(profile, (425, 100))
         
-        # ใส่ข้อความ (ใช้ Font.light เพื่อความปลอดภัยบน Linux)
-        font_large = Font.light(size=50)
-        font_small = Font.light(size=30)
+        background.text((550, 380), "WELCOME", color="white", align="center")
+        background.text((550, 440), f"{member.name}", color="white", align="center")
         
-        background.text((550, 380), "WELCOME", color="white", font=font_large, align="center")
-        background.text((550, 440), f"{member.name}", color="white", font=font_small, align="center")
-        
-        # ส่งรูป
         file = discord.File(fp=background.image_bytes, filename="welcome.png")
-        await channel.send(f"ยินดีต้อนรับคุณ {member.mention} เข้าสู่เซิร์ฟเวอร์ครับ!", file=file)
+        await channel.send(f"ยินดีต้อนรับคุณ {member.mention} สู่เซิร์ฟเวอร์!", file=file)
     except Exception as e:
-        print(f"เกิดข้อผิดพลาดตอนคนเข้า: {e}")
+        print(f"Error Join: {e}")
 
 @bot.event
 async def on_member_remove(member):
-    # เลขห้องที่คุณส่งมา (Goodbye)
-    channel_id = 1495616451527315476 
-    channel = bot.get_channel(channel_id)
-    if not channel:
-        return
-
+    channel = bot.get_channel(1495616451527315476)
+    if not channel: return
     try:
         background = Editor("background.png").resize((1100, 500))
-        profile_image = load_image_with_retry(member.display_avatar.url)
-        profile = Editor(profile_image).resize((250, 250)).circle_image()
+        
+        # แก้บรรทัดนี้: ใช้ load_image แทน
+        profile_img = load_image(member.display_avatar.url)
+        profile = Editor(profile_img).resize((250, 250)).circle_image()
         
         background.paste(profile, (425, 100))
         
-        font_large = Font.light(size=50)
-        background.text((550, 380), "GOODBYE", color="red", font=font_large, align="center")
-        background.text((550, 440), f"{member.name}", color="white", font=font_large, align="center")
+        background.text((550, 380), "GOODBYE", color="red", align="center")
+        background.text((550, 440), f"{member.name}", color="white", align="center")
         
         file = discord.File(fp=background.image_bytes, filename="goodbye.png")
-        await channel.send(f"ลาก่อนนะคุณ {member.name} แล้วพบกันใหม่!", file=file)
+        await channel.send(f"ลาก่อนคุณ {member.name}!", file=file)
     except Exception as e:
-        print(f"เกิดข้อผิดพลาดตอนคนออก: {e}")
+        print(f"Error Leave: {e}")
 
-# เริ่มระบบ Keep Alive เพื่อไม่ให้บอทหลับ
 keep_alive()
-
-# ดึง Token จาก Environment Variables ของ Render
 token = os.getenv('TOKEN')
 if token:
     bot.run(token)
 else:
-    print("Error: ไม่พบตัวแปร TOKEN ในหน้า Settings ของ Render")
+    print("❌ Token not found")
