@@ -1,48 +1,56 @@
 import discord
 from discord.ext import commands
-import os  # เพิ่มบรรทัดนี้
+import os
 from keep_alive import keep_alive
 from easy_pil import Editor, load_image_with_retry, Font
 
-# ตั้งค่าบอท
+# 1. ตั้งค่า Intents ให้มองเห็นสมาชิก
 intents = discord.Intents.default()
 intents.members = True 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user.name}')
+    print(f'--- บอทออนไลน์แล้วในชื่อ: {bot.user.name} ---')
 
 @bot.event
 async def on_member_join(member):
-    # เปลี่ยนตัวเลขข้างล่างนี้ให้เป็น ID ห้องของคุณจริงๆ
-    channel = bot.get_channel(1495616411647737916) 
-    if channel is None:
+    # เลขห้องที่คุณส่งมา (Welcome)
+    channel_id = 1495616411647737916 
+    channel = bot.get_channel(channel_id)
+    if not channel:
         return
 
     try:
+        # โหลดพื้นหลัง (ขนาดควรสัมพันธ์กับ 1100x500 เพื่อความสวยงาม)
         background = Editor("background.png").resize((1100, 500))
+        
+        # โหลดรูปโปรไฟล์และตัดวงกลม
         profile_image = load_image_with_retry(member.display_avatar.url)
         profile = Editor(profile_image).resize((250, 250)).circle_image()
         
+        # วางรูปโปรไฟล์ไว้ตรงกลาง
         background.paste(profile, (425, 100))
         
-        # ใช้ฟอนต์แบบ Standard เพื่อลดโอกาส Error บน Render
+        # ใส่ข้อความ (ใช้ Font.light เพื่อความปลอดภัยบน Linux)
         font_large = Font.light(size=50)
         font_small = Font.light(size=30)
         
         background.text((550, 380), "WELCOME", color="white", font=font_large, align="center")
         background.text((550, 440), f"{member.name}", color="white", font=font_small, align="center")
         
+        # ส่งรูป
         file = discord.File(fp=background.image_bytes, filename="welcome.png")
-        await channel.send(f"ยินดีต้อนรับคุณ {member.mention} สู่เซิร์ฟเวอร์!", file=file)
+        await channel.send(f"ยินดีต้อนรับคุณ {member.mention} เข้าสู่เซิร์ฟเวอร์ครับ!", file=file)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"เกิดข้อผิดพลาดตอนคนเข้า: {e}")
 
 @bot.event
 async def on_member_remove(member):
-    channel = bot.get_channel(1495616451527315476) # เปลี่ยน ID ให้ตรงกัน
-    if channel is None:
+    # เลขห้องที่คุณส่งมา (Goodbye)
+    channel_id = 1495616451527315476 
+    channel = bot.get_channel(channel_id)
+    if not channel:
         return
 
     try:
@@ -57,14 +65,16 @@ async def on_member_remove(member):
         background.text((550, 440), f"{member.name}", color="white", font=font_large, align="center")
         
         file = discord.File(fp=background.image_bytes, filename="goodbye.png")
-        await channel.send(f"ลาก่อนนะคุณ {member.name}!", file=file)
+        await channel.send(f"ลาก่อนนะคุณ {member.name} แล้วพบกันใหม่!", file=file)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"เกิดข้อผิดพลาดตอนคนออก: {e}")
 
+# เริ่มระบบ Keep Alive เพื่อไม่ให้บอทหลับ
 keep_alive()
-# ตรวจสอบว่าใน Render ตั้งค่า Environment Variable ชื่อ TOKEN ไว้แล้ว
+
+# ดึง Token จาก Environment Variables ของ Render
 token = os.getenv('TOKEN')
 if token:
     bot.run(token)
 else:
-    print("Error: ไม่พบ TOKEN ใน Environment Variables")
+    print("Error: ไม่พบตัวแปร TOKEN ในหน้า Settings ของ Render")
